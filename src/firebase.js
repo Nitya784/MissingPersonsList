@@ -1,17 +1,7 @@
-// ─── PASTE YOUR FIREBASE CONFIG HERE ─────────────────────────────────────────
-// Go to: console.firebase.google.com → your project → Project Settings → Your Apps → Web App
-// Copy the firebaseConfig object and replace below
-
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, push, onValue, remove, update, get } from "firebase/database";
 
-const firebaseConfig = {
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
+// ✅ Firebase config (ONLY ONCE)
 const firebaseConfig = {
   apiKey: "AIzaSyByRf0lK-X938sgThv1eNAeFM6fwOBdwfk",
   authDomain: "bvrit-attendance.firebaseapp.com",
@@ -22,14 +12,11 @@ const firebaseConfig = {
   appId: "1:324718188881:web:97f75e720f245e9dbe9b70"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-};
-
+// ✅ Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const db = getDatabase(app);
 
-// ─── DB HELPERS ───────────────────────────────────────────────────────────────
+// ─── DB HELPERS ───────────────────────────────────────────────
 
 // Sessions
 export async function createSession(session) {
@@ -46,50 +33,62 @@ export async function rotateCode(id, newCode) {
 
 export async function deleteSession(id) {
   await remove(ref(db, `sessions/${id}`));
-  // also remove all records for this session
+
   const snap = await get(ref(db, "records"));
   if (snap.exists()) {
     const all = snap.val();
     const toDelete = Object.entries(all)
       .filter(([, v]) => v.sessionId === id)
       .map(([k]) => k);
+
     await Promise.all(toDelete.map(k => remove(ref(db, `records/${k}`))));
   }
 }
 
 export async function markPresent(record) {
-  // check duplicate first
   const snap = await get(ref(db, "records"));
+
   if (snap.exists()) {
     const existing = Object.values(snap.val()).find(
       r => r.sessionId === record.sessionId && r.username === record.username
     );
     if (existing) return false;
   }
+
   const newRef = push(ref(db, "records"));
-  await set(newRef, { ...record, id: newRef.key, markedAt: new Date().toISOString() });
+  await set(newRef, {
+    ...record,
+    id: newRef.key,
+    markedAt: new Date().toISOString()
+  });
+
   return true;
 }
 
 export async function toggleRecord(sessionId, student) {
   const snap = await get(ref(db, "records"));
+
   if (snap.exists()) {
     const entries = Object.entries(snap.val());
-    const existing = entries.find(([, v]) => v.sessionId === sessionId && v.username === student.username);
+    const existing = entries.find(
+      ([, v]) => v.sessionId === sessionId && v.username === student.username
+    );
+
     if (existing) {
       await remove(ref(db, `records/${existing[0]}`));
       return;
     }
   }
+
   const newRef = push(ref(db, "records"));
   await set(newRef, {
-    id:        newRef.key,
+    id: newRef.key,
     sessionId,
-    username:  student.username,
-    name:      student.name,
-    rollNo:    student.rollNo,
-    method:    "manual",
-    markedAt:  new Date().toISOString(),
+    username: student.username,
+    name: student.name,
+    rollNo: student.rollNo,
+    method: "manual",
+    markedAt: new Date().toISOString(),
   });
 }
 
