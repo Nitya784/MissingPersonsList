@@ -11,15 +11,10 @@ export default function GenerateQR() {
 
   return (
     <div>
-      <h2>Generate Attendance QR</h2>
-      <button onClick={createSession}>Generate QR</button>
+      <h2>Generate QR</h2>
+      <button onClick={createSession}>Create QR</button>
 
-      {sessionId && (
-        <div>
-          <p>{sessionId}</p>
-          <QRCode value={sessionId} />
-        </div>
-      )}
+      {sessionId && <QRCode value={sessionId} />}
     </div>
   );
 }
